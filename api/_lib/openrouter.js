@@ -1,6 +1,6 @@
 // Shared Gemini helper used by all Vercel API routes.
 
-export const MODEL = 'gemini-2.0-flash';
+export const MODEL = 'gemini-3.6-flash';
 
 export const SYSTEM_PROMPT = `You are an expert Space Systems Engineering AI for a platform called Orbital.
 You operate in two modes: INTERVIEW and DESIGN.

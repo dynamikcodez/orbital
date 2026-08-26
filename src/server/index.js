@@ -6,8 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 
-// Use gemini-2.0-flash — fast, free tier, 1M context window
-const MODEL = 'gemini-2.0-flash';
+// Use gemini-3.6-flash — fast, free tier, 1M context window
+const MODEL = 'gemini-3.6-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`;
 
 app.use(cors({ origin: true }));
