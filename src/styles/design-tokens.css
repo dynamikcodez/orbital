@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Background */
+  --bg:         #0A0E1A;
+  --surface:    #111827;
+  --surface-2:  #1a2234;
+  --border:     #1F2937;
+  --border-2:   #2d3a50;
+
+  /* Accent */
+  --accent:     #3B82F6;
+  --accent-dim: rgba(59,130,246,0.15);
+  --accent-glow:rgba(59,130,246,0.35);
+
+  /* Status */
+  --success:    #10B981;
+  --warning:    #F59E0B;
+  --critical:   #EF4444;
+
+  /* Text */
+  --text:       #F9FAFB;
+  --text-muted: #6B7280;
+  --text-dim:   #374151;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --font-body:    'Inter', sans-serif;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* Shadow */
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 28px rgba(59,130,246,0.25);
+
+  /* Transitions */
+  --t: 0.22s ease;
+
+  /* Legacy aliases for existing code */
+  --color-primary:  #3B82F6;
+  --color-bg:       #0A0E1A;
+  --color-surface:  #111827;
+  --color-text:     #F9FAFB;
+}
