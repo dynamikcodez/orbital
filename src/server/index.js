@@ -4,10 +4,11 @@ import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
+const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
 
-// Model to use via OpenRouter — claude-sonnet-4-5 as specified
-const MODEL = 'anthropic/claude-sonnet-4-5';
+// Use gemini-2.0-flash — fast, free tier, 1M context window
+const MODEL = 'gemini-2.0-flash';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`;
 
 app.use(cors({ origin: true }));
 app.use(express.json());
@@ -16,7 +17,7 @@ app.use(express.json());
 const SYSTEM_PROMPT = `You are an expert Space Systems Engineering AI for a platform called Orbital.
 You operate in two modes: INTERVIEW and DESIGN.
 
-### MODE 1 — INTERVIEW
+### MODE 1 - INTERVIEW
 Triggered when the user submits a mission description.
 
 If any of the following are missing or ambiguous, return ONLY this JSON:
@@ -33,7 +34,7 @@ Required parameters to collect:
 
 When ALL parameters are known, set interviewStatus to "COMPLETE" and return the full SatelliteDesign JSON immediately.
 
-### MODE 2 — DESIGN
+### MODE 2 - DESIGN
 Triggered when interviewStatus is COMPLETE.
 Return ONLY valid JSON. No prose outside the JSON object.
 
@@ -43,9 +44,9 @@ ENGINEERING RULES:
 - Eclipse margin must be positive. Flag powerBalance.status as "Critical" if below 10%.
 - Express all costs as min/mid/max ranges, never single figures.
 - Generate exactly 2 tradeOffVariants: one cost-optimized, one mass-optimized.
-- Each subsystem must include a one-sentence educationNote written for a technically curious non-engineer.
+- Each subsystem must include a one-sentence educationNote for a technically curious non-engineer.
 
-Full SatelliteDesign JSON schema:
+SatelliteDesign JSON schema:
 {
   "interviewStatus": "COMPLETE",
   "missionProfile": {
@@ -73,7 +74,7 @@ Full SatelliteDesign JSON schema:
           "massKg": number,
           "powerConsumptionW": number,
           "estimatedCostUSD": { "min": number, "mid": number, "max": number },
-          "specifications": { [key: string]: string|number },
+          "specifications": {},
           "redundancy": "Single"|"Dual"|"N+1",
           "alternatives": [string]
         }
@@ -108,78 +109,64 @@ Full SatelliteDesign JSON schema:
   ]
 }`;
 
-// ── OpenRouter helper ──────────────────────────────────────────────────────
-async function callOpenRouter(messages) {
-  if (!OPENROUTER_KEY) {
-    throw new Error('OPENROUTER_API_KEY is not set in .env');
-  }
+// ── Gemini API helper ──────────────────────────────────────────────────────
+// Converts OpenAI-style history [{role:'user'|'assistant', content}]
+// into Gemini contents format [{role:'user'|'model', parts:[{text}]}]
+function toGeminiContents(messages) {
+  return messages.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+}
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'http://localhost:5173',
-      'X-Title': 'Orbital - AI Satellite Engineering',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...messages,
-      ],
-      max_tokens: 8192,
+async function callGemini(messages) {
+  if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY is not set in .env');
+
+  const body = {
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: toGeminiContents(messages),
+    generationConfig: {
       temperature: 0.3,
-    }),
+      maxOutputTokens: 4096,
+      responseMimeType: 'application/json',  // ask Gemini to return raw JSON
+    },
+  };
+
+  const response = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`OpenRouter ${response.status}: ${text}`);
+    throw new Error(`Gemini ${response.status}: ${text}`);
   }
 
   const data = await response.json();
-  const raw = data.choices?.[0]?.message?.content ?? '';
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  if (!raw) throw new Error('Empty response from Gemini');
 
-  if (!raw) throw new Error('Empty response from model');
-
-  // Strip markdown code fences if present
+  // Strip markdown fences just in case
   const clean = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-
-  try {
-    return JSON.parse(clean);
-  } catch {
-    // Model returned non-JSON (should not happen) — wrap it
-    console.error('Non-JSON response from model:\n', raw);
-    throw new Error('Model returned non-JSON. Raw: ' + raw.slice(0, 200));
-  }
+  return JSON.parse(clean);
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 
-// POST /api/interview  — first message or continuation
 app.post('/api/interview', async (req, res) => {
   try {
     const { missionDescription, archetypeId, history = [] } = req.body;
 
-    const systemCtx = archetypeId
-      ? `The user has pre-selected the "${archetypeId}" satellite archetype.`
-      : '';
-
-    // If no history yet, build the opening user message
     let messages;
     if (history.length === 0) {
-      messages = [
-        {
-          role: 'user',
-          content: `${systemCtx ? systemCtx + '\n\n' : ''}Mission description: ${missionDescription}`,
-        },
-      ];
+      const ctx = archetypeId ? `The user selected the "${archetypeId}" archetype.\n\n` : '';
+      messages = [{ role: 'user', content: `${ctx}Mission description: ${missionDescription}` }];
     } else {
       messages = history;
     }
 
-    const result = await callOpenRouter(messages);
+    const result = await callGemini(messages);
     res.json(result);
   } catch (err) {
     console.error('[/api/interview]', err.message);
@@ -187,12 +174,11 @@ app.post('/api/interview', async (req, res) => {
   }
 });
 
-// POST /api/interview/answer  — subsequent user answers
 app.post('/api/interview/answer', async (req, res) => {
   try {
     const { history = [], answer } = req.body;
     const messages = [...history, { role: 'user', content: answer }];
-    const result = await callOpenRouter(messages);
+    const result = await callGemini(messages);
     res.json(result);
   } catch (err) {
     console.error('[/api/interview/answer]', err.message);
@@ -200,18 +186,12 @@ app.post('/api/interview/answer', async (req, res) => {
   }
 });
 
-// POST /api/archetypes — static for MVP
-app.post('/api/archetypes', (_req, res) => {
-  res.json({ message: 'Archetypes served statically in the frontend for MVP.' });
-});
-
-// GET /api/health
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, model: MODEL, keyLoaded: !!OPENROUTER_KEY });
+  res.json({ ok: true, model: MODEL, keyLoaded: !!GEMINI_KEY });
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🚀 Orbital API  →  http://localhost:${PORT}`);
-  console.log(`   Model        →  ${MODEL}`);
-  console.log(`   Key loaded   →  ${OPENROUTER_KEY ? 'YES ✓' : 'NO ✗ — check .env'}\n`);
+  console.log(`\n🚀 Orbital API  ->  http://localhost:${PORT}`);
+  console.log(`   Model        ->  ${MODEL} (Gemini)`);
+  console.log(`   Key loaded   ->  ${GEMINI_KEY ? 'YES' : 'NO - check .env'}\n`);
 });

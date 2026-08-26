@@ -1,7 +1,7 @@
 // Vercel serverless function: POST /api/interview
 // Handles both the first message and follow-up answers in one endpoint.
 
-import { callOpenRouter } from './_lib/openrouter.js';
+import { callGemini } from './_lib/openrouter.js';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       messages = history;
     }
 
-    const result = await callOpenRouter(messages);
+    const result = await callGemini(messages);
     return res.status(200).json(result);
   } catch (err) {
     console.error('[/api/interview]', err.message);
