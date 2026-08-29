@@ -195,3 +195,5 @@ app.listen(PORT, () => {
   console.log(`   Model        ->  ${MODEL} (Gemini)`);
   console.log(`   Key loaded   ->  ${GEMINI_KEY ? 'YES' : 'NO - check .env'}\n`);
 });
+// Prevent the process from exiting if there are no other event listeners
+process.stdin.resume();
