@@ -4,6 +4,7 @@ import DiscoveryGallery from '../components/DiscoveryGallery';
 import MissionIntake from '../components/MissionIntake';
 import InterviewView from '../components/InterviewView';
 import DesignWorkspace from '../components/DesignWorkspace';
+import XRExperience from '../components/XRExperience';
 
 export default function AppRouter() {
   return (
@@ -13,6 +14,7 @@ export default function AppRouter() {
         <Route path="/mission" element={<MissionIntake />} />
         <Route path="/interview" element={<InterviewView />} />
         <Route path="/design" element={<DesignWorkspace />} />
+        <Route path="/xr" element={<XRExperience />} />
       </Routes>
     </BrowserRouter>
   );

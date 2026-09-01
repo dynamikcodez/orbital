@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./DesignWorkspace.css";
 import { applyTrade } from "../utils/tradeService";
+import XRViewer from "./xr/XRViewer";
 
 
 export default function DesignWorkspace() {
+  const navigate = useNavigate();
   const [design, setDesign] = useState(null);
   const [error, setError] = useState(null);
 
@@ -50,6 +53,32 @@ export default function DesignWorkspace() {
   return (
     <section className="design-workspace">
       <h2 className="section-title">Design Workspace</h2>
+
+      {/* ── XR Satellite Viewer ── */}
+      <div className="design-section xr-viewer-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 className="section-subtitle" style={{ margin: 0 }}>3D Satellite Model</h3>
+          <button
+            onClick={() => navigate('/xr')}
+            style={{
+              background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 18px',
+              cursor: 'pointer',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13,
+              fontWeight: 600,
+              transition: '0.2s ease',
+            }}
+          >
+            🥽 Full-Screen XR
+          </button>
+        </div>
+        <XRViewer design={design} standalone={false} />
+      </div>
+
       <img src="/satellite_block_diagram.png" alt="Satellite block diagram" className="block-diagram" />
 
       {/* Mission Profile */}

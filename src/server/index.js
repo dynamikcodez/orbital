@@ -190,10 +190,30 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, model: MODEL, keyLoaded: !!GEMINI_KEY });
 });
 
+// ── 3D Model Generation ──────────────────────────────────────────────────
+// Import and mount the Vercel-compatible handler as an Express route
+import generateModelHandler from '../../api/generate-model.js';
+
+app.post('/api/generate-model', async (req, res) => {
+  try {
+    await generateModelHandler(req, res);
+  } catch (err) {
+    console.error('[/api/generate-model]', err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
+
+const TRIPO_KEY = process.env.TRIPO_API_KEY || '';
+const MESHY_KEY = process.env.MESHY_API_KEY || '';
+const HUNYUAN_KEY = process.env.HUNYUAN_API_KEY || '';
+
 app.listen(PORT, () => {
   console.log(`\n🚀 Orbital API  ->  http://localhost:${PORT}`);
   console.log(`   Model        ->  ${MODEL} (Gemini)`);
-  console.log(`   Key loaded   ->  ${GEMINI_KEY ? 'YES' : 'NO - check .env'}\n`);
+  console.log(`   Key loaded   ->  ${GEMINI_KEY ? 'YES' : 'NO - check .env'}`);
+  console.log(`   3D Gen keys  ->  Tripo:${TRIPO_KEY ? '✓' : '✗'}  Meshy:${MESHY_KEY ? '✓' : '✗'}  Hunyuan:${HUNYUAN_KEY ? '✓' : '✗'}\n`);
 });
 // Prevent the process from exiting if there are no other event listeners
 process.stdin.resume();

@@ -12,6 +12,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "@react-three/xr": "^6.6.30",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.7.2",
     "cors": "^2.8.6",

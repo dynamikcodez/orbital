@@ -122,6 +122,19 @@ export default function DiscoveryGallery() {
         <button className="nav-skip" onClick={handleSkip}>
           Skip to mission intake &#8594;
         </button>
+        <button
+          className="nav-skip"
+          onClick={() => navigate('/xr')}
+          style={{
+            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            padding: '8px 18px',
+          }}
+        >
+          🥽 XR Demo
+        </button>
       </nav>
 
       {/* ── Hero ── */}
