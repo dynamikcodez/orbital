@@ -1,0 +1,170 @@
+/* ── XR Viewer Mobile Responsive Overrides ── */
+
+/* Touch-friendly: increase tap target sizes on all interactive elements */
+@media (pointer: coarse) {
+  .xr-toggle-btn,
+  .xr-subsystem-pill,
+  .xr-close-btn,
+  .xr-prompt-submit {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* ── Mobile: < 768px ── */
+@media (max-width: 768px) {
+  /* Header wraps and shrinks */
+  .xr-header {
+    padding: 6px 10px !important;
+    gap: 6px !important;
+  }
+
+  .xr-header-title {
+    font-size: 12px !important;
+  }
+
+  .xr-orbit-badge {
+    font-size: 9px !important;
+    padding: 1px 5px !important;
+  }
+
+  .xr-header-right {
+    gap: 4px !important;
+  }
+
+  .xr-toggle-btn {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Subsystem pills scroll horizontally */
+  .xr-subsystem-bar {
+    padding: 6px 8px !important;
+    gap: 4px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .xr-subsystem-pill {
+    font-size: 11px !important;
+    padding: 5px 10px !important;
+  }
+
+  /* Inspector becomes a bottom sheet instead of right sidebar */
+  .xr-inspector {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 55vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 14px !important;
+    z-index: 200 !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  /* Add a drag handle indicator at the top of the sheet */
+  .xr-inspector::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+    margin: 0 auto 10px;
+  }
+
+  .xr-inspector-title {
+    font-size: 14px !important;
+  }
+
+  .xr-metrics-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+  }
+
+  .xr-metric-card {
+    padding: 5px 6px !important;
+  }
+
+  .xr-metric-label {
+    font-size: 8px !important;
+  }
+
+  .xr-metric-val {
+    font-size: 11px !important;
+  }
+
+  .xr-prompt-input {
+    font-size: 14px !important; /* Prevents iOS zoom */
+  }
+
+  .xr-comp-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+  }
+
+  .xr-comp-specs {
+    text-align: left !important;
+  }
+
+  /* Bottom HUD simplifies */
+  .xr-info-bar {
+    padding: 6px 10px !important;
+    gap: 10px !important;
+  }
+
+  .xr-info-label {
+    font-size: 8px !important;
+  }
+
+  .xr-info-value {
+    font-size: 12px !important;
+  }
+
+  .xr-info-hint {
+    display: none !important;
+  }
+
+  /* Toast */
+  .xr-toast {
+    font-size: 11px !important;
+    padding: 5px 12px !important;
+    max-width: 90vw !important;
+  }
+}
+
+/* ── Very small phones: < 420px ── */
+@media (max-width: 420px) {
+  .xr-header-title {
+    font-size: 11px !important;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .xr-orbit-badge {
+    display: none !important;
+  }
+
+  .xr-toggle-btn {
+    font-size: 10px !important;
+    padding: 5px 6px !important;
+  }
+
+  .xr-inspector {
+    max-height: 60vh !important;
+    padding: 10px !important;
+  }
+
+  .xr-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .xr-info-bar {
+    justify-content: space-around !important;
+  }
+}

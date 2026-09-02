@@ -6,15 +6,40 @@ import { SATELLITE_PRIMITIVES, getArchetypePrimitives } from './primitiveCompone
 
 /* ── colour map for subsystem types ── */
 const TYPE_COLORS = {
-  bus:      '#4B5EAA',
-  solar:    '#10B981',
-  camera:   '#F59E0B',
-  antenna:  '#8B5CF6',
-  adcs:     '#3B82F6',
-  thruster: '#EF4444',
-  thermal:  '#6B7280',
+  bus:      '#6B8DD6',
+  solar:    '#34D399',
+  camera:   '#FBBF24',
+  antenna:  '#A78BFA',
+  adcs:     '#60A5FA',
+  thruster: '#F87171',
+  thermal:  '#FCD34D',
   default:  '#60A5FA',
 };
+
+/* ── Persistent 3D floating label ── */
+function SubsystemLabel({ name, type, position, isSelected }) {
+  return (
+    <Html position={position} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+      <div style={{
+        background: isSelected ? 'rgba(59,130,246,0.85)' : 'rgba(10,14,26,0.75)',
+        border: `1px solid ${isSelected ? '#3B82F6' : 'rgba(255,255,255,0.15)'}`,
+        borderRadius: 6,
+        padding: '2px 8px',
+        color: '#F9FAFB',
+        fontFamily: "'Inter', sans-serif",
+        fontSize: 10,
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        backdropFilter: 'blur(4px)',
+        letterSpacing: '0.02em',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        borderLeft: `3px solid ${colorFor(type)}`,
+      }}>
+        {name}
+      </div>
+    </Html>
+  );
+}
 
 function colorFor(type) {
   return TYPE_COLORS[type] || TYPE_COLORS.default;
@@ -78,6 +103,7 @@ function SubsystemMesh({
   const isAnySelected = Boolean(selectedSubsystem);
   const isDimmed = isAnySelected && !isSelected;
   const showTooltip = hovered || isSelected;
+  const showLabel = !showTooltip;
 
   const color = materialProps.color || colorFor(sub.type);
 
@@ -137,7 +163,8 @@ function SubsystemMesh({
         castShadow
         receiveShadow
       />
-      {showTooltip && <SubsystemTooltip sub={sub} position={[0, 1.2, 0]} />}
+      {showLabel && <SubsystemLabel name={sub.name} type={sub.type} position={[0, 0.8, 0]} isSelected={isSelected} />}
+      {showTooltip && <SubsystemTooltip sub={sub} position={[0, 1.4, 0]} />}
     </group>
   );
 }
@@ -152,10 +179,10 @@ function SolarPanels({ sub, busWidth, exploded, archetype, selectedSubsystem, on
 
   const panelGeo = useMemo(() => new THREE.BoxGeometry(...panelDims), [panelDims]);
   const baseOffset = busWidth / 2 + 0.35 + panelDims[0] / 2;
-  const explodeFactor = exploded ? 1.6 : 1.0;
+  const explodeFactor = exploded ? 2.2 : 1.0;
 
-  const leftPos = [-baseOffset * explodeFactor, 0, 0];
-  const rightPos = [baseOffset * explodeFactor, 0, 0];
+  const leftPos = [-baseOffset * explodeFactor, exploded ? 0.3 : 0, 0];
+  const rightPos = [baseOffset * explodeFactor, exploded ? 0.3 : 0, 0];
 
   return (
     <group>
@@ -183,7 +210,7 @@ function SolarPanels({ sub, busWidth, exploded, archetype, selectedSubsystem, on
 function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.antenna || {};
   const type = primitive.geometryType || 'parabolicDish';
-  const explodeFactor = exploded ? 0.8 : 0;
+  const explodeFactor = exploded ? 1.2 : 0;
 
   if (type === 'dualReflectorDishes') {
     // GEO Dual Reflectors (Left & Right deployable dishes)
@@ -257,7 +284,7 @@ function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsyst
 function PayloadCamera({ sub, busH, busW, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.camera || {};
   const type = primitive.geometryType || 'telescopeBaffle';
-  const explodeFactor = exploded ? 0.7 : 0;
+  const explodeFactor = exploded ? 1.4 : 0;
 
   if (type === 'planarSarArray') {
     // SAR Synthetic Aperture Radar Array Panel underneath
@@ -313,7 +340,7 @@ function PayloadCamera({ sub, busH, busW, exploded, archetype, selectedSubsystem
 function ThrusterNozzle({ sub, busD, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.thruster || {};
   const type = primitive.geometryType || 'hydrazineCone';
-  const explodeFactor = exploded ? 0.7 : 0;
+  const explodeFactor = exploded ? 1.2 : 0;
 
   let nozzleGeo = new THREE.CylinderGeometry(0.08, 0.22, 0.4, 16);
   if (type === 'liquidApogeeEngine') {
@@ -391,7 +418,7 @@ export default function SatelliteModel({
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(busGeo), [busGeo]);
 
   const adcsX = busW / 2 + 0.18;
-  const adcsPos = [exploded ? adcsX + 0.6 : adcsX, 0.15, 0];
+  const adcsPos = [exploded ? adcsX + 1.5 : adcsX, exploded ? 0.5 : 0.15, exploded ? 0.8 : 0];
 
   return (
     <Float speed={1.5} rotationIntensity={0.12} floatIntensity={0.25}>
@@ -413,20 +440,26 @@ export default function SatelliteModel({
           <lineBasicMaterial color={busConfig.edgeHighlightColor || '#5a7ac4'} transparent opacity={0.3} />
         </lineSegments>
 
-        {/* Thermal MLI wrap */}
-        {thermalSub && !exploded && (
-          <mesh position={[0, 0, 0]} geometry={thermalGeo}>
-            <meshPhysicalMaterial
-              color="#d4af37"
-              metalness={0.95}
-              roughness={0.08}
-              transparent
-              opacity={0.12}
-              clearcoat={1}
-              clearcoatRoughness={0}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
+        {/* Thermal MLI wrap — selectable */}
+        {thermalSub && (
+          <SubsystemMesh
+            sub={thermalSub}
+            targetPosition={exploded ? [busW / 2 + 0.8, busH / 2 + 1.5, 0] : [0, 0, 0]}
+            geometry={thermalGeo}
+            scale={exploded ? [0.6, 0.6, 0.6] : [1, 1, 1]}
+            materialProps={{
+              color: '#d4af37',
+              metalness: 0.95,
+              roughness: 0.08,
+              transparent: true,
+              opacity: exploded ? 0.7 : 0.15,
+              clearcoat: 1,
+              clearcoatRoughness: 0,
+              side: THREE.DoubleSide,
+            }}
+            selectedSubsystem={selectedSubsystem}
+            onSelectSubsystem={onSelectSubsystem}
+          />
         )}
 
         {/* Solar panels */}

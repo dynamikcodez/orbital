@@ -11,6 +11,7 @@ import SatelliteModel from './SatelliteModel';
 import OrbitRing from './OrbitRing';
 import StarField from './StarField';
 import { DEMO_DESIGN } from './demoDesign';
+import './XRViewer.css';
 
 const xrStore = createXRStore({
   emulate: false,
@@ -209,21 +210,22 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
   return (
     <div style={containerStyle}>
       {/* ── Top Bar ── */}
-      <div style={styles.header}>
+      <div className="xr-header" style={styles.header}>
         <div style={styles.headerLeft}>
           <span style={styles.headerDot}>◉</span>
-          <span style={styles.headerTitle}>
+          <span className="xr-header-title" style={styles.headerTitle}>
             {profile.name || 'Satellite'} — XR Component Studio
           </span>
           {profile.orbitType && (
-            <span style={styles.orbitBadge}>
+            <span className="xr-orbit-badge" style={styles.orbitBadge}>
               {profile.orbitType} · {profile.altitudeKm} km
             </span>
           )}
         </div>
 
-        <div style={styles.headerRight}>
+        <div className="xr-header-right" style={styles.headerRight}>
           <button
+            className="xr-toggle-btn"
             style={{
               ...styles.toggleBtn,
               ...(exploded ? styles.explodedActive : {}),
@@ -234,12 +236,14 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
             💥 Explode View
           </button>
           <button
+            className="xr-toggle-btn"
             style={{ ...styles.toggleBtn, ...(showOrbit ? styles.toggleActive : {}) }}
             onClick={() => setShowOrbit(!showOrbit)}
           >
             Orbit
           </button>
           <button
+            className="xr-toggle-btn"
             style={{ ...styles.toggleBtn, ...(showStars ? styles.toggleActive : {}) }}
             onClick={() => setShowStars(!showStars)}
           >
@@ -247,12 +251,12 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
           </button>
 
           {xrSupported.ar && (
-            <button style={styles.xrBtn} onClick={() => xrStore.enterAR()}>
+            <button className="xr-toggle-btn" style={styles.xrBtn} onClick={() => xrStore.enterAR()}>
               📱 Enter AR
             </button>
           )}
           {xrSupported.vr && (
-            <button style={{ ...styles.xrBtn, ...styles.vrBtn }} onClick={() => xrStore.enterVR()}>
+            <button className="xr-toggle-btn" style={{ ...styles.xrBtn, ...styles.vrBtn }} onClick={() => xrStore.enterVR()}>
               🥽 Enter VR
             </button>
           )}
@@ -261,14 +265,15 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
 
       {/* ── Toast Banner ── */}
       {toastMsg && (
-        <div style={styles.toast}>
+        <div className="xr-toast" style={styles.toast}>
           {toastMsg}
         </div>
       )}
 
       {/* ── Component Selector Bar ── */}
-      <div style={styles.subsystemBar}>
+      <div className="xr-subsystem-bar" style={styles.subsystemBar}>
         <button
+          className="xr-subsystem-pill"
           style={{
             ...styles.subsystemPill,
             ...(!selectedSubsystem ? styles.subsystemPillActive : {}),
@@ -283,6 +288,7 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
           return (
             <button
               key={sub.id || sub.type}
+              className="xr-subsystem-pill"
               style={{
                 ...styles.subsystemPill,
                 ...(isSelected ? styles.subsystemPillActive : {}),
@@ -330,18 +336,19 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
 
         {/* ── Floating Component Inspector Sidebar ── */}
         {selectedSubsystem && (
-          <div style={styles.inspectorSidebar}>
+          <div className="xr-inspector" style={styles.inspectorSidebar}>
             <div style={styles.inspectorHeader}>
               <div style={styles.inspectorTitleRow}>
                 <span style={styles.inspectorIcon}>
                   {SUBSYSTEM_ICONS[selectedSubsystem.type] || SUBSYSTEM_ICONS.default}
                 </span>
                 <div>
-                  <div style={styles.inspectorTitle}>{selectedSubsystem.name}</div>
+                  <div className="xr-inspector-title" style={styles.inspectorTitle}>{selectedSubsystem.name}</div>
                   <div style={styles.inspectorSubtype}>{selectedSubsystem.type?.toUpperCase()} SUBSYSTEM</div>
                 </div>
               </div>
               <button
+                className="xr-close-btn"
                 style={styles.closeBtn}
                 onClick={() => setSelectedSubsystem(null)}
               >
@@ -350,18 +357,18 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
             </div>
 
             {/* Metrics pills */}
-            <div style={styles.metricsGrid}>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>MASS</span>
-                <span style={styles.metricVal}>{selMass.toFixed(1)} kg</span>
+            <div className="xr-metrics-grid" style={styles.metricsGrid}>
+              <div className="xr-metric-card" style={styles.metricCard}>
+                <span className="xr-metric-label" style={styles.metricLabel}>MASS</span>
+                <span className="xr-metric-val" style={styles.metricVal}>{selMass.toFixed(1)} kg</span>
               </div>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>POWER</span>
-                <span style={styles.metricVal}>{selPower} W</span>
+              <div className="xr-metric-card" style={styles.metricCard}>
+                <span className="xr-metric-label" style={styles.metricLabel}>POWER</span>
+                <span className="xr-metric-val" style={styles.metricVal}>{selPower} W</span>
               </div>
-              <div style={styles.metricCard}>
-                <span style={styles.metricLabel}>EST. COST</span>
-                <span style={{ ...styles.metricVal, color: '#10B981' }}>
+              <div className="xr-metric-card" style={styles.metricCard}>
+                <span className="xr-metric-label" style={styles.metricLabel}>EST. COST</span>
+                <span className="xr-metric-val" style={{ ...styles.metricVal, color: '#10B981' }}>
                   ${(selCostMin / 1000).toFixed(0)}K - ${(selCostMax / 1000).toFixed(0)}K
                 </span>
               </div>
@@ -378,11 +385,13 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
                   placeholder={`e.g. Upgrade ${selectedSubsystem.type} for higher efficiency...`}
                   value={promptText}
                   onChange={(e) => setPromptText(e.target.value)}
+                  className="xr-prompt-input"
                   style={styles.promptInput}
                   disabled={isModifying}
                 />
                 <button
                   type="submit"
+                  className="xr-prompt-submit"
                   style={styles.promptSubmitBtn}
                   disabled={isModifying || !promptText.trim()}
                 >
@@ -405,12 +414,12 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
                 <div style={styles.sectionHeader}>Included Components</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {selectedSubsystem.components.map((comp, idx) => (
-                    <div key={idx} style={styles.compRow}>
+                    <div key={idx} className="xr-comp-row" style={styles.compRow}>
                       <div>
                         <div style={styles.compName}>{comp.name}</div>
                         <div style={styles.compRole}>{comp.role}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div className="xr-comp-specs" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 11, color: '#9CA3AF' }}>{comp.massKg} kg | {comp.powerConsumptionW}W</div>
                         {comp.redundancy && (
                           <span style={styles.redundancyTag}>{comp.redundancy}</span>
@@ -445,27 +454,27 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
       </div>
 
       {/* ── Bottom HUD ── */}
-      <div style={styles.infoBar}>
+      <div className="xr-info-bar" style={styles.infoBar}>
         <div style={styles.infoItem}>
-          <span style={styles.infoLabel}>Total Mass</span>
-          <span style={styles.infoValue}>{profile.totalMassKg || '—'} kg</span>
+          <span className="xr-info-label" style={styles.infoLabel}>Total Mass</span>
+          <span className="xr-info-value" style={styles.infoValue}>{profile.totalMassKg || '—'} kg</span>
         </div>
         <div style={styles.infoItem}>
-          <span style={styles.infoLabel}>Total Power</span>
-          <span style={styles.infoValue}>{profile.totalPowerW || '—'} W</span>
+          <span className="xr-info-label" style={styles.infoLabel}>Total Power</span>
+          <span className="xr-info-value" style={styles.infoValue}>{profile.totalPowerW || '—'} W</span>
         </div>
         <div style={styles.infoItem}>
-          <span style={styles.infoLabel}>Lifespan</span>
-          <span style={styles.infoValue}>{profile.targetLifespanYears || '—'} yr</span>
+          <span className="xr-info-label" style={styles.infoLabel}>Lifespan</span>
+          <span className="xr-info-value" style={styles.infoValue}>{profile.targetLifespanYears || '—'} yr</span>
         </div>
         <div style={styles.infoItem}>
-          <span style={styles.infoLabel}>Est. Cost</span>
-          <span style={{ ...styles.infoValue, color: '#10B981' }}>
+          <span className="xr-info-label" style={styles.infoLabel}>Est. Cost</span>
+          <span className="xr-info-value" style={{ ...styles.infoValue, color: '#10B981' }}>
             ${((profile.estimatedCostUSD?.mid || 0) / 1_000_000).toFixed(1)}M
           </span>
         </div>
         <div style={{ ...styles.infoItem, flex: 1, textAlign: 'right' }}>
-          <span style={styles.infoHint}>
+          <span className="xr-info-hint" style={styles.infoHint}>
             {exploded ? '💥 Exploded Component Mode' : 'Click components in 3D or menu above to inspect & prompt AI changes'}
           </span>
         </div>
