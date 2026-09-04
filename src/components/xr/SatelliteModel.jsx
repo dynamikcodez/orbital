@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html, Float, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { SATELLITE_PRIMITIVES, getArchetypePrimitives } from './primitiveComponents';
+import { EXPLODE_LAYERS } from './ExplodedViewPanel';
 
 /* ── colour map for subsystem types ── */
 const TYPE_COLORS = {
@@ -45,40 +46,52 @@ function colorFor(type) {
   return TYPE_COLORS[type] || TYPE_COLORS.default;
 }
 
-/* ── Tooltip shown on hover / click ── */
+/* ── Tooltip shown on hover / click (enriched with layer metadata) ── */
 function SubsystemTooltip({ sub, position }) {
   const totalMass = sub.components?.reduce((s, c) => s + (c.massKg || 0), 0) || 0;
   const totalPower = sub.components?.reduce((s, c) => s + (c.powerConsumptionW || 0), 0) || 0;
   const totalCost = sub.components?.reduce((s, c) => s + (c.estimatedCostUSD?.min || 0), 0) || 0;
+  const layerMeta = EXPLODE_LAYERS.find(l => l.type === sub.type);
+  const accentColor = layerMeta?.color || colorFor(sub.type);
   return (
     <Html position={position} center distanceFactor={8} style={{ pointerEvents: 'none' }}>
       <div style={{
-        background: 'rgba(10,14,26,0.92)',
-        border: '1px solid rgba(59,130,246,0.4)',
-        borderRadius: 10,
-        padding: '10px 14px',
+        background: 'rgba(8,12,22,0.96)',
+        border: `1px solid ${accentColor}55`,
+        borderRadius: 12,
+        padding: '11px 14px',
         color: '#F9FAFB',
         fontFamily: "'Inter', sans-serif",
         fontSize: 12,
-        minWidth: 160,
-        backdropFilter: 'blur(8px)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        minWidth: 190,
+        backdropFilter: 'blur(10px)',
+        boxShadow: `0 4px 28px rgba(0,0,0,0.6), 0 0 0 1px ${accentColor}22`,
       }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: colorFor(sub.type) }}>
-          {sub.name}
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: accentColor }}>
+          {layerMeta?.icon || ''} {sub.name}
         </div>
-        <div style={{ color: '#9CA3AF' }}>
-          Mass: <span style={{ color: '#F9FAFB' }}>{totalMass.toFixed(1)} kg</span>
+        {layerMeta && (
+          <>
+            <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 4, fontStyle: 'italic', lineHeight: 1.4 }}>
+              {layerMeta.function}
+            </div>
+            <div style={{ fontSize: 10, color: '#4B5563', marginBottom: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+              MAT · {layerMeta.material}
+            </div>
+          </>
+        )}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+          <span style={{ color: '#9CA3AF', fontSize: 11 }}>⚖️ <span style={{ color: '#F9FAFB' }}>{totalMass.toFixed(1)} kg</span></span>
+          <span style={{ color: '#9CA3AF', fontSize: 11 }}>⚡ <span style={{ color: '#F9FAFB' }}>{totalPower} W</span></span>
+          <span style={{ color: '#9CA3AF', fontSize: 11 }}>💰 <span style={{ color: '#10B981' }}>${(totalCost/1000).toFixed(0)}K</span></span>
         </div>
-        <div style={{ color: '#9CA3AF' }}>
-          Power: <span style={{ color: '#F9FAFB' }}>{totalPower} W</span>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 5 }}>
+          {sub.components?.map((c, i) => (
+            <div key={i} style={{ color: '#6B7280', fontSize: 10, marginTop: 2 }}>
+              <span style={{ color: accentColor }}>▸</span> {c.name} — {c.role || ''}
+            </div>
+          ))}
         </div>
-        <div style={{ color: '#9CA3AF' }}>
-          Cost: <span style={{ color: '#10B981' }}>${(totalCost / 1000).toFixed(0)}K</span>
-        </div>
-        {sub.components?.map((c, i) => (
-          <div key={i} style={{ color: '#6B7280', fontSize: 11, marginTop: 2 }}>• {c.name}</div>
-        ))}
       </div>
     </Html>
   );
@@ -172,17 +185,17 @@ function SubsystemMesh({
 /* ── Specialized Archetype Primitive Components ── */
 
 /* 1. Solar Panel Wings (Supports 1-4 panel segments per wing) */
-function SolarPanels({ sub, busWidth, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
+function SolarPanels({ sub, busWidth, explodeT, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.solar || {};
   const panelsPerWing = primitive.panelsPerWing || 2;
   const panelDims = primitive.panelDimensions || [2.6, 0.04, 1.3];
 
   const panelGeo = useMemo(() => new THREE.BoxGeometry(...panelDims), [panelDims]);
   const baseOffset = busWidth / 2 + 0.35 + panelDims[0] / 2;
-  const explodeFactor = exploded ? 2.2 : 1.0;
+  const ef = explodeT * 2.2;
 
-  const leftPos = [-baseOffset * explodeFactor, exploded ? 0.3 : 0, 0];
-  const rightPos = [baseOffset * explodeFactor, exploded ? 0.3 : 0, 0];
+  const leftPos = [-baseOffset - ef * 0.8, ef * 0.13, 0];
+  const rightPos = [baseOffset + ef * 0.8, ef * 0.13, 0];
 
   return (
     <group>
@@ -207,16 +220,16 @@ function SolarPanels({ sub, busWidth, exploded, archetype, selectedSubsystem, on
 }
 
 /* 2. Antenna Assembly (Supports Dishes, Turnstiles, Helical, Dual GEO Reflectors) */
-function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
+function AntennaAssembly({ sub, busH, busW, explodeT, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.antenna || {};
   const type = primitive.geometryType || 'parabolicDish';
-  const explodeFactor = exploded ? 1.2 : 0;
+  const explodeFactor = explodeT * 1.2;
 
   if (type === 'dualReflectorDishes') {
     // GEO Dual Reflectors (Left & Right deployable dishes)
     const dishGeo = new THREE.SphereGeometry(primitive.dishRadius || 0.8, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-    const leftDishPos = [-(busW / 2 + 0.8 + explodeFactor), 0.5, 0];
-    const rightDishPos = [(busW / 2 + 0.8 + explodeFactor), 0.5, 0];
+    const leftDishPos = [-(busW / 2 + 0.8 + explodeFactor * 1.2), 0.5 * explodeT, 0];
+    const rightDishPos = [(busW / 2 + 0.8 + explodeFactor * 1.2), 0.5 * explodeT, 0];
     return (
       <group>
         <SubsystemMesh
@@ -244,7 +257,7 @@ function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsyst
   if (type === 'turnstileWhip' || type === 'helicalTurnstileCombo') {
     // CubeSat / IoT Turnstile Whip Antennas
     const whipGeo = new THREE.CylinderGeometry(0.015, 0.015, primitive.whipLength || 0.8, 8);
-    const baseY = busH / 2 + 0.25 + explodeFactor;
+    const baseY = busH / 2 + 0.25 + explodeFactor * 1.0;
     return (
       <group>
         {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, idx) => (
@@ -266,7 +279,7 @@ function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsyst
   // Parabolic Dish (Default)
   const dishRadius = primitive.radius || 0.45;
   const dishGeo = new THREE.SphereGeometry(dishRadius, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-  const targetPos = [0, busH / 2 + 0.55 + explodeFactor, 0];
+  const targetPos = [0, busH / 2 + 0.55 + explodeFactor * 1.0, 0];
 
   return (
     <SubsystemMesh
@@ -281,10 +294,10 @@ function AntennaAssembly({ sub, busH, busW, exploded, archetype, selectedSubsyst
 }
 
 /* 3. Camera / Payload (Supports Optical Telescope, Planar SAR Radar Panel, Magnetometer) */
-function PayloadCamera({ sub, busH, busW, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
+function PayloadCamera({ sub, busH, busW, explodeT, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.camera || {};
   const type = primitive.geometryType || 'telescopeBaffle';
-  const explodeFactor = exploded ? 1.4 : 0;
+  const explodeFactor = explodeT * 1.4;
 
   if (type === 'planarSarArray') {
     // SAR Synthetic Aperture Radar Array Panel underneath
@@ -337,10 +350,10 @@ function PayloadCamera({ sub, busH, busW, exploded, archetype, selectedSubsystem
 }
 
 /* 4. Thruster Nozzle (Supports Cold Gas, Hydrazine Cone, Apogee Engine, Hall Thruster) */
-function ThrusterNozzle({ sub, busD, exploded, archetype, selectedSubsystem, onSelectSubsystem }) {
+function ThrusterNozzle({ sub, busD, explodeT, archetype, selectedSubsystem, onSelectSubsystem }) {
   const primitive = archetype.subsystems?.thruster || {};
   const type = primitive.geometryType || 'hydrazineCone';
-  const explodeFactor = exploded ? 1.2 : 0;
+  const explodeFactor = explodeT * 1.2;
 
   let nozzleGeo = new THREE.CylinderGeometry(0.08, 0.22, 0.4, 16);
   if (type === 'liquidApogeeEngine') {
@@ -374,9 +387,12 @@ export default function SatelliteModel({
   autoRotate = true,
   glbUrl = null,
   exploded = false,
+  explodeT = 0,
   selectedSubsystem = null,
   onSelectSubsystem = null,
 }) {
+  // Support both legacy boolean and new normalized float
+  const t = typeof explodeT === 'number' ? explodeT : (exploded ? 1 : 0);
   const groupRef = useRef();
 
   useFrame((_, delta) => {
@@ -418,7 +434,7 @@ export default function SatelliteModel({
   const edgesGeo = useMemo(() => new THREE.EdgesGeometry(busGeo), [busGeo]);
 
   const adcsX = busW / 2 + 0.18;
-  const adcsPos = [exploded ? adcsX + 1.5 : adcsX, exploded ? 0.5 : 0.15, exploded ? 0.8 : 0];
+  const adcsPos = [adcsX + t * 1.5, 0.15 + t * 0.35, t * 0.8];
 
   return (
     <Float speed={1.5} rotationIntensity={0.12} floatIntensity={0.25}>
@@ -444,15 +460,15 @@ export default function SatelliteModel({
         {thermalSub && (
           <SubsystemMesh
             sub={thermalSub}
-            targetPosition={exploded ? [busW / 2 + 0.8, busH / 2 + 1.5, 0] : [0, 0, 0]}
+            targetPosition={[t * (busW / 2 + 0.8), t * (busH / 2 + 1.5), 0]}
             geometry={thermalGeo}
-            scale={exploded ? [0.6, 0.6, 0.6] : [1, 1, 1]}
+            scale={[1 - t * 0.4, 1 - t * 0.4, 1 - t * 0.4]}
             materialProps={{
               color: '#d4af37',
               metalness: 0.95,
               roughness: 0.08,
               transparent: true,
-              opacity: exploded ? 0.7 : 0.15,
+              opacity: 0.15 + t * 0.55,
               clearcoat: 1,
               clearcoatRoughness: 0,
               side: THREE.DoubleSide,
@@ -467,7 +483,7 @@ export default function SatelliteModel({
           <SolarPanels
             sub={solarSub}
             busWidth={busW}
-            exploded={exploded}
+            explodeT={t}
             archetype={archetype}
             selectedSubsystem={selectedSubsystem}
             onSelectSubsystem={onSelectSubsystem}
@@ -480,7 +496,7 @@ export default function SatelliteModel({
             sub={cameraSub}
             busH={busH}
             busW={busW}
-            exploded={exploded}
+            explodeT={t}
             archetype={archetype}
             selectedSubsystem={selectedSubsystem}
             onSelectSubsystem={onSelectSubsystem}
@@ -493,7 +509,7 @@ export default function SatelliteModel({
             sub={antennaSub}
             busH={busH}
             busW={busW}
-            exploded={exploded}
+            explodeT={t}
             archetype={archetype}
             selectedSubsystem={selectedSubsystem}
             onSelectSubsystem={onSelectSubsystem}
@@ -517,7 +533,7 @@ export default function SatelliteModel({
           <ThrusterNozzle
             sub={thrusterSub}
             busD={busD}
-            exploded={exploded}
+            explodeT={t}
             archetype={archetype}
             selectedSubsystem={selectedSubsystem}
             onSelectSubsystem={onSelectSubsystem}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import {
   OrbitControls,
@@ -11,6 +11,7 @@ import SatelliteModel from './SatelliteModel';
 import OrbitRing from './OrbitRing';
 import StarField from './StarField';
 import { DEMO_DESIGN } from './demoDesign';
+import ExplodedViewPanel from './ExplodedViewPanel';
 import './XRViewer.css';
 
 const xrStore = createXRStore({
@@ -53,7 +54,7 @@ function SceneContents({
   showOrbit,
   showStars,
   glbUrl,
-  exploded,
+  explodeT,
   selectedSubsystem,
   onSelectSubsystem,
 }) {
@@ -79,7 +80,7 @@ function SceneContents({
         design={design}
         autoRotate={!selectedSubsystem}
         glbUrl={glbUrl}
-        exploded={exploded}
+        explodeT={explodeT}
         selectedSubsystem={selectedSubsystem}
         onSelectSubsystem={onSelectSubsystem}
       />
@@ -110,14 +111,31 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
   const [design, setDesign] = useState(propDesign || null);
   const [showOrbit, setShowOrbit] = useState(true);
   const [showStars, setShowStars] = useState(true);
-  const [exploded, setExploded] = useState(false);
+  // Normalized explode parameter (0 = assembled, 1 = fully separated)
+  const [explodeT, setExplodeT] = useState(0);
+  const [showExplodePanel, setShowExplodePanel] = useState(false);
+  const [activeLayerType, setActiveLayerType] = useState(null);
   const [selectedSubsystem, setSelectedSubsystem] = useState(null);
   const [xrSupported, setXrSupported] = useState({ vr: false, ar: false });
-  
+
   // Promptable Component Editing State
   const [promptText, setPromptText] = useState('');
   const [isModifying, setIsModifying] = useState(false);
   const [toastMsg, setToastMsg] = useState(null);
+
+  const exploded = explodeT > 0;
+
+  const handleUpdateDesign = useCallback((updated) => {
+    setDesign(updated);
+    sessionStorage.setItem('satelliteDesign', JSON.stringify(updated));
+  }, []);
+
+  const handleLayerSelect = useCallback((layer) => {
+    setActiveLayerType(layer.type);
+    // Optionally sync subsystem inspector with the selected layer
+    const sub = design?.subsystems?.find(s => s.type === layer.type);
+    if (sub) setSelectedSubsystem(sub);
+  }, [design]);
 
   const controlsRef = useRef();
 
@@ -228,10 +246,13 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
             className="xr-toggle-btn"
             style={{
               ...styles.toggleBtn,
-              ...(exploded ? styles.explodedActive : {}),
+              ...(showExplodePanel ? styles.explodedActive : {}),
             }}
-            onClick={() => setExploded(!exploded)}
-            title="Toggle exploded 3D component view"
+            onClick={() => {
+              setShowExplodePanel(p => !p);
+              if (explodeT === 0) setExplodeT(0.01); // nudge open on first click
+            }}
+            title="Toggle exploded component view panel"
           >
             💥 Explode View
           </button>
@@ -317,7 +338,7 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
                 showOrbit={showOrbit}
                 showStars={showStars}
                 glbUrl={glbUrl}
-                exploded={exploded}
+                explodeT={explodeT}
                 selectedSubsystem={selectedSubsystem}
                 onSelectSubsystem={setSelectedSubsystem}
               />
@@ -333,6 +354,19 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
             />
           </XR>
         </Canvas>
+
+        {/* ── Exploded View Panel ── */}
+        {showExplodePanel && (
+          <ExplodedViewPanel
+            explodeT={explodeT}
+            onExplodeT={setExplodeT}
+            design={design}
+            onUpdateDesign={handleUpdateDesign}
+            onClose={() => setShowExplodePanel(false)}
+            onSelectLayer={handleLayerSelect}
+            activeLayerType={activeLayerType}
+          />
+        )}
 
         {/* ── Floating Component Inspector Sidebar ── */}
         {selectedSubsystem && (
@@ -475,7 +509,9 @@ export default function XRViewer({ design: propDesign, standalone = false, glbUr
         </div>
         <div style={{ ...styles.infoItem, flex: 1, textAlign: 'right' }}>
           <span className="xr-info-hint" style={styles.infoHint}>
-            {exploded ? '💥 Exploded Component Mode' : 'Click components in 3D or menu above to inspect & prompt AI changes'}
+            {explodeT > 0
+              ? `💥 ${Math.round(explodeT * 100)}% exploded — drag slider or click layers to inspect`
+              : 'Click 💥 Explode View to separate layers · Click components to inspect & edit'}
           </span>
         </div>
       </div>

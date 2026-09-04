@@ -1,5 +1,55 @@
 /* ── XR Viewer Mobile Responsive Overrides ── */
 
+/* ── Exploded View Panel — slide-in from left ── */
+.xr-explode-panel {
+  animation: explodePanelSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes explodePanelSlideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Explode Scrubber — custom range input ── */
+.xr-explode-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #F59E0B var(--pct, 0%),
+    rgba(255,255,255,0.12) var(--pct, 0%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+.xr-explode-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #FDE68A, #F59E0B);
+  border: 2px solid rgba(245,158,11,0.6);
+  box-shadow: 0 0 10px rgba(245,158,11,0.5), 0 2px 6px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.xr-explode-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  box-shadow: 0 0 18px rgba(245,158,11,0.8), 0 2px 8px rgba(0,0,0,0.6);
+}
+.xr-explode-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #FDE68A, #F59E0B);
+  border: 2px solid rgba(245,158,11,0.6);
+  cursor: pointer;
+}
+
+
 /* Touch-friendly: increase tap target sizes on all interactive elements */
 @media (pointer: coarse) {
   .xr-toggle-btn,
