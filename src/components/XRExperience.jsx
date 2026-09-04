@@ -17,6 +17,7 @@ export default function XRExperience() {
   const [isDemo, setIsDemo] = useState(false);
   const [glbUrl, setGlbUrl] = useState(null);
   const [genStatus, setGenStatus] = useState('idle'); // idle | generating | done | error | no-key
+  const [dismissBadge, setDismissBadge] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem('satelliteDesign');
@@ -103,10 +104,10 @@ export default function XRExperience() {
       </button>
 
       {/* Generation status badge */}
-      {genStatus !== 'idle' && genStatus !== 'done' && (
+      {!dismissBadge && genStatus !== 'idle' && genStatus !== 'done' && (
         <div style={{
           position: 'fixed',
-          top: 16,
+          top: 70,
           right: 16,
           zIndex: 200,
           background: genStatus === 'generating'
@@ -127,16 +128,26 @@ export default function XRExperience() {
           fontSize: 11,
           backdropFilter: 'blur(8px)',
         }}>
-          {genStatus === 'generating' && '⏳ Generating AI model...'}
-          {genStatus === 'no-key' && '🔑 No 3D API key — using parametric model'}
-          {genStatus === 'error' && '⚠ AI gen failed — using parametric model'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span>
+              {genStatus === 'generating' && '⏳ Generating AI model...'}
+              {genStatus === 'no-key' && '🔑 No 3D API key — using parametric model'}
+              {genStatus === 'error' && '⚠ AI gen failed — using parametric model'}
+            </span>
+            <button 
+              onClick={() => setDismissBadge(true)}
+              style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 14, opacity: 0.7, padding: 0 }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
-      {genStatus === 'done' && glbUrl && (
+      {!dismissBadge && genStatus === 'done' && glbUrl && (
         <div style={{
           position: 'fixed',
-          top: 16,
+          top: 70,
           right: 16,
           zIndex: 200,
           background: 'rgba(16,185,129,0.15)',
@@ -148,7 +159,15 @@ export default function XRExperience() {
           fontSize: 11,
           backdropFilter: 'blur(8px)',
         }}>
-          ✓ AI model loaded
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span>✓ AI model loaded</span>
+            <button 
+              onClick={() => setDismissBadge(true)}
+              style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 14, opacity: 0.7, padding: 0 }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
